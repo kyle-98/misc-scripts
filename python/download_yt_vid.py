@@ -1,10 +1,12 @@
 from pytube import YouTube as YT
+from pytube.cli import on_progress
 import re
 import os
 import ffmpeg
 
+
 def download_vid_720(save_dir, link):
-    video = YT(link)
+    video = YT(link, on_progress_callback=on_progress)
     file = video.streams.get_highest_resolution()
     print(f'>>> Downloading {file.title}')
     file_name = re.sub(r'[\"\\/\?;*<>|]', '', file.title)
@@ -13,7 +15,7 @@ def download_vid_720(save_dir, link):
 
 def download_vid_HD(save_dir, link):
     try:
-        video = YT(link)
+        video = YT(link, on_progress_callback=on_progress)
         file = video.streams.filter(progressive=False, file_extension='mp4').order_by('resolution').desc().first()
         print(f'>>> Downloading {file.title}')
         audio = video.streams.filter(only_audio=True).first()
@@ -37,6 +39,7 @@ if __name__ == '__main__':
         quality = input('HD or 720: ')
         link = input('Enter link: ')
         if quality == "HD":
+            
             download_vid_HD(path, link)
         else:
             download_vid_720(path, link)
