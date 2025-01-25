@@ -1,58 +1,44 @@
-# pip install opencv-python pyzbar pillow
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import filedialog
-import cv2
+from tkinter import filedialog, messagebox
+from PIL import Image
 from pyzbar.pyzbar import decode
 import os
 
-
-class ThePrimeExpress:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("The Prime Express")
-
-        self.label = tk.Label(root, text="Click to open one or more images and decode")
-        self.label.pack(pady=10)
-
-        self.open_button = tk.Button(root, text="Open Image(s)", command=self.open_images)
-        self.open_button.pack(pady=5)
-
-        self.quit_button = tk.Button(root, text="Quit", command=root.quit)
-        self.quit_button.pack(pady=10)
-
-    def open_images(self):
-        filepaths = filedialog.askopenfilenames(filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
-        if filepaths:
-            self.decode_multiple_qr_codes(filepaths)
-
-    def decode_multiple_qr_codes(self, filepaths):
-        script_dir = os.path.dirname(os.path.realpath(__file__))
-        output_file = os.path.join(script_dir, "output.txt")
-
-        all_qr_data = "" 
-        
-        for filepath in filepaths:
-            img = cv2.imread(filepath)
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+def upload_and_decode_multiple():
+    file_paths = filedialog.askopenfilenames(title="Select images", filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif")])
+    
+    if file_paths:
+        full_decoded_text = ""  
+        for file_path in file_paths:
+            img = Image.open(file_path)
             
-            qr_codes = decode(gray)
-            if qr_codes:
-                for qr_code in qr_codes:
-                    qr_data = qr_code.data.decode("utf-8")
-                    all_qr_data += qr_data  
+            decoded_objects = decode(img)
+            
+            if decoded_objects:
+                for obj in decoded_objects:
+                    qr_data = obj.data.decode('utf-8')
+                    full_decoded_text += qr_data 
             else:
-                self.result_label.config(text="No QR Code found in one of the images.")
+                result_label.config(text="One or more images have no QR code.")
         
+        output_file = os.path.join(os.path.dirname(__file__), "output.txt")
         with open(output_file, "w") as file:
-            file.write(all_qr_data)
+            if full_decoded_text == '':
+                messagebox.showinfo('Failure', 'Failed to detect QR code in photo')
+            else:
+                file.write(full_decoded_text)
+        
+        if full_decoded_text != '':
+            result_label.config(text="Decoded text written to output.txt")
 
-        self.result_label.config(text=f"Decoded QR Codes combined: {all_qr_data}")
+root = tk.Tk()
+root.geometry('400x150')
+root.title("The Prime Express")
 
-        messagebox.showinfo("Success", "QR codes decoded and combined into output.txt")
+upload_button = tk.Button(root, text="Upload Image(s)", command=upload_and_decode_multiple)
+upload_button.pack(pady=20)
 
+result_label = tk.Label(root, text="Decoded text will appear here", wraplength=300)
+result_label.pack(pady=20)
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ThePrimeExpress(root)
-    root.mainloop()
+root.mainloop()
